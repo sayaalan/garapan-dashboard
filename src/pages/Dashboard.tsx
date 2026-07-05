@@ -16,7 +16,7 @@ const flagColors: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const { user, signIn, loading: authLoading } = useAuth();
+  const { user, signIn, signUp, loading: authLoading } = useAuth();
   const [garapan, setGarapan] = useState<GarapanRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -48,16 +48,24 @@ export default function Dashboard() {
       <main className="flex min-h-screen items-center justify-center bg-background px-4">
         <Card className="w-full max-w-sm border-border/40 shadow-none">
           <CardContent className="p-6 space-y-4">
+          <CardContent className="p-6 space-y-4">
             <div>
-              <h2 className="text-lg font-semibold tracking-tight">Sign in</h2>
-              <p className="text-sm text-muted-foreground">Enter your email to receive a magic link.</p>
+              <h2 className="text-lg font-semibold tracking-tight">{isSignUp ? "Create Account" : "Sign In"}</h2>
+              <p className="text-sm text-muted-foreground">{isSignUp ? "Create an account to save garapan." : "Sign in to see your saved garapan."}</p>
             </div>
             <Input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <Button className="w-full" onClick={async () => { const { error } = await signIn(email); if (!error) alert("Check your email for a magic link."); }}>
-              Send magic link
+            <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-2" />
+            <Button className="w-full mt-2" onClick={async () => {
+              const fn = isSignUp ? signUp : signIn;
+              const { error } = await fn(email, password);
+              if (!error) return;
+              alert(error.message);
+            }}>
+              {isSignUp ? "Sign Up" : "Sign In"}
             </Button>
-          </CardContent>
-        </Card>
+            <button className="text-xs text-muted-foreground hover:underline mt-1" onClick={() => setIsSignUp(!isSignUp)}>
+              {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
+            </button>
       </main>
     );
   }
