@@ -1,2 +1,2 @@
-export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-export const supabaseKey = import.met
+export const supabaseUrl = 'https://ivevhnqohnisdoaslxtq.supabase.co';
+export const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2ZXZobnFvaG5pc2RvYXNseHRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMzM4NjksImV4cCI6MjA5ODgwOTg2OX0.TQIUCayqhWXbeuhiaeBKxtyrNeom9KXiB4QYX7DtOL4';
