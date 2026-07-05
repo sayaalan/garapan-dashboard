@@ -1,68 +1,73 @@
 import { supabase } from "./supabase";
 
-export interface GarapanRow {
+export type Garapan = {
   id: number;
   text: string;
+  flags: string[];
+  links: string[];
   telegram_url: string;
   posted_at: string;
-  flags: string[] | null;
-}
+};
 
-export interface TrackedRow {
+export type TrackedRow = {
   id: number;
   garapan_id: number;
   user_id: string;
   status: string;
   notes: string | null;
   deadline: string | null;
-  garapan?: GarapanRow;
+  garapan?: Garapan;
+};
+
+export async function fetchGarapan(opts?: { q?: string; filter?: string | null }): Promise<Garapan[]> {
+  const q = opts?.q || "";
+  const filter = opts?.filter || null;
+  let query = supabase.from("garapan").select("*").order("posted_at", { ascending: false }).limit(500);
+  if (filter) query = query.overlaps("flags", [filter]);
+  if (q) query = query.ilike("text", `%${q}%`);
+  const { data } = await query;
+  return (data || []) as Garapan[];
 }
 
-export async function fetchGarapan(page: number, limit: number, filters?: string) {
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
-  let query = supabase.from("garapan").select("*", { count: "exact" }).order("posted_at", { ascending: false }).range(from, to);
-  if (filters) {
-    const arr = filters.split(",");
-    query = query.overlaps("flags", arr);
-  }
-  const res = await query;
-  return { items: (res.data || []) as GarapanRow[], total: res.count || 0 };
-}
-
-export async function fetchStats() {
-  const [{ count }, { data: byFlag }] = await Promise.all([
-    supabase.from("garapan").select("*", { count: "exact", head: true }),
-    supabase.from("garapan").select("flags"),
-  ]);
-  const flagCounts: Record<string, number> = { total: count || 0 };
-  (byFlag || []).forEach((row) => {
-    (row.flags || []).forEach((f: string) => {
-      flagCounts[f] = (flagCounts[f] || 0) + 1;
-    });
-  });
-  return flagCounts;
-}
-
-export async function toggleTrack(garapanId: number, userId: string) {
-  const { data: existing } = await supabase.from("tracked").select("id").eq("garapan_id", garapanId).eq("user_id", userId).maybeSingle();
+export async function toggleTrack(garapanId: number): Promise<{ tracked: boolean }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { tracked: false };
+  const uid = session.user.id;
+  const { data: existing } = await supabase.from("tracked").select("id").eq("garapan_id", garapanId).eq("user_id", uid).maybeSingle();
   if (existing) {
     await supabase.from("tracked").delete().eq("id", existing.id);
     return { tracked: false };
   }
-  await supabase.from("tracked").insert({ garapan_id: garapanId, user_id: userId, status: "pending" });
+  await supabase.from("tracked").insert({ garapan_id: garapanId, user_id: uid, status: "todo" });
   return { tracked: true };
 }
 
-export async function fetchTracked(userId: string): Promise<TrackedRow[]> {
-  const { data } = await supabase.from("tracked").select("*, garapan:garapan_id(*)").eq("user_id", userId).order("created_at", { ascending: false });
+export async function fetchTrackedIds(): Promise<number[]> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return [];
+  const uid = session.user.id;
+  const { data } = await supabase.from("tracked").select("garapan_id").eq("user_id", uid);
+  return ((data || []) as { garapan_id: number }[]).map(r => r.garapan_id);
+}
+
+export async function fetchTracked(): Promise<TrackedRow[]> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return [];
+  const uid = session.user.id;
+  const { data } = await supabase.from("tracked").select("*, garapan:garapan_id(*)").eq("user_id", uid).order("created_at", { ascending: false });
   return (data || []) as TrackedRow[];
 }
 
 export async function updateTracked(id: number, field: string, value: string) {
-  await supabase.from("tracked").update({ [field]: value }).eq("id", id);
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+  const uid = session.user.id;
+  await supabase.from("tracked").update({ [field]: value }).eq("id", id).eq("user_id", uid);
 }
 
 export async function deleteTracked(id: number) {
-  await supabase.from("tracked").delete().eq("id", id);
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+  const uid = session.user.id;
+  await supabase.from("tracked").delete().eq("id", id).eq("user_id", uid);
 }

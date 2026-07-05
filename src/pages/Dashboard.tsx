@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchGarapan, toggleTrack, fetchTracked, updateTracked, deleteTracked } from "@/lib/api";
+import { fetchGarapan, toggleTrack, fetchTracked, fetchTrackedIds, updateTracked, deleteTracked } from "@/lib/api";
 import type { Garapan } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,13 +37,13 @@ export default function Dashboard() {
 
   async function loadData() {
     setLoading(true);
-    const [items, saved] = await Promise.all([
+    const [items, savedIds] = await Promise.all([
       fetchGarapan({ q: search, filter: activeFilter }),
-      fetchTracked(),
+      fetchTrackedIds(),
     ]);
     setGarapan(items);
-    setSavedIds(new Set(saved));
-    const sg = await fetchTracked(saved);
+    setSavedIds(new Set(savedIds));
+    const sg = await fetchTracked();
     setSavedGarapan(sg);
     setLoading(false);
   }
