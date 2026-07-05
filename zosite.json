@@ -1,0 +1,15 @@
+{
+  "name": "garapan-dashboard",
+  "local_port": 55316,
+  "entrypoint": "bun run dev",
+  "publish": {
+    "label": "garapan-dashboard",
+    "type": "http",
+    "entrypoint": "bun run prod",
+    "published_port": 51007,
+    "env": {
+      "NODE_ENV": "production",
+      "ZO_CLIENT_IDENTITY_TOKEN": "none"
+    }
+  }
+}
