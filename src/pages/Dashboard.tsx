@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [signUpMsg, setSignUpMsg] = useState("");
   const [tab, setTab] = useState<"all" | "saved">("all");
   const [deadlineInputs, setDeadlineInputs] = useState<Record<number, string>>({});
 
@@ -80,11 +81,16 @@ export default function Dashboard() {
           <Button className="w-full" onClick={async () => {
             const fn = isSignUp ? signUp : signIn;
             const { error } = await fn(email, password);
-            if (error) { alert(error.message); }
+            if (error) { alert(error.message); return; }
+            if (isSignUp) {
+              setSignUpMsg("Akun berhasil dibuat! Silakan sign in.");
+              setIsSignUp(false);
+            }
           }}>
             {isSignUp ? "Sign Up" : "Sign In"}
           </Button>
-          <button className="text-xs text-muted-foreground hover:underline w-full text-center" onClick={() => setIsSignUp(!isSignUp)}>
+          {signUpMsg && <p className="text-xs text-green-400 text-center">{signUpMsg}</p>}
+          <button className="text-xs text-muted-foreground hover:underline w-full text-center" onClick={() => { setIsSignUp(!isSignUp); setSignUpMsg(""); }}>
             {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
           </button>
         </CardContent>
